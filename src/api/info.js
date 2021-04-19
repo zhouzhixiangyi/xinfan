@@ -46,17 +46,71 @@ export function getInfosById(id) {
 
 
 
+// export function addInfo(formInfo) {
+//     return request({
+//         url: '/api/xinfangBasicInformations',
+//         method: 'POST',
+//         data: formInfo
+//     })
+// }
+
+
 export function addInfo(formInfo) {
+    Object.keys(formInfo).forEach(key => {
+        if (key == 'appealWaysToDisplay') {
+            key = 'appealWays'
+        }
+    })
+    console.log(formInfo)
     return request({
         url: '/api/xinfangBasicInformations',
         method: 'POST',
-        data: formInfo
+        data: formInfo,
+        
     })
 }
+
+export function addFilesById(id, files) {
+    // Object.keys(formInfo).forEach(key => {
+    //     if (key == 'appealWaysToDisplay') {
+    //         key = 'appealWays'
+    //     }
+    // })
+    // console.log(formInfo)
+    return request({
+        url: `/api/xinfangBasicInformations/${id}/xinfangRelatedMaterials`,
+        method: 'POST',
+        data: files
+    })
+}
+
+// 获取附件
+
+export function getFilesById(id) {
+    // Object.keys(formInfo).forEach(key => {
+    //     if (key == 'appealWaysToDisplay') {
+    //         key = 'appealWays'
+    //     }
+    // })
+    // console.log(formInfo)
+    return request({
+        url: `/api/xinfangBasicInformations/${id}/xinfangRelatedMaterials`,
+        method: 'GET'
+    })
+}
+
 
 export function deleteInfo(id) {
     return request({
         url: '/api/xinfangBasicInformations/' + id,
+        method: 'DELETE',
+    })
+}
+
+
+export function deleteFileById(basicInfoId, relatedMaterialId) {
+    return request({
+        url: `api/xinfangBasicInformations/${basicInfoId}/xinfangRelatedMaterials/${relatedMaterialId}`,
         method: 'DELETE',
     })
 }

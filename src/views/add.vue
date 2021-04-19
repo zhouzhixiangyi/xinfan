@@ -6,6 +6,7 @@
       :wrapper-col="wrapperCol"
       ref="formRef"
       :rules="rules"
+      enctype="multipart/form-data"
     >
       <a-form-item label="收到时间" name="receivedTime">
         <a-date-picker
@@ -109,7 +110,7 @@
             <upload-outlined></upload-outlined>
             Select File
           </a-button>
-          <a-button
+          <!-- <a-button
             type="primary"
             :disabled="fileList.length === 0"
             :loading="uploading"
@@ -117,12 +118,14 @@
             @click="handleUpload"
           >
             {{ uploading ? "Uploading" : "Start Upload" }}
-          </a-button>
+          </a-button> -->
         </a-upload>
       </a-form-item>
     </a-form>
     <div class="submit-button">
-      <a-button type="primary" @click="onSubmit">保存</a-button>
+      <a-button type="primary" @click="onSubmit" :loading="uploading">{{
+        uploading ? "正在上传" : "保存并上传数据"
+      }}</a-button>
       <a-button style="margin-left: 10px" @click="resetForm">重置</a-button>
     </div>
   </div>
@@ -131,10 +134,10 @@
 import { UploadOutlined } from "@ant-design/icons-vue";
 import { defineComponent, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { getInfosById, addInfo, editInfo } from "@/api/info";
+import { getInfosById, addInfo, editInfo, addFilesById } from "@/api/info";
 
 import { message } from "ant-design-vue";
-import request from 'umi-request';
+
 export default defineComponent({
   components: {
     UploadOutlined,
@@ -143,6 +146,10 @@ export default defineComponent({
     const formRef = ref();
     const route = useRoute();
     const router = useRouter();
+
+    // 文件上传
+    const fileList = ref([]);
+    const uploading = ref(false);
 
     let formState = ref({
       receivedTime: "",
@@ -164,19 +171,25 @@ export default defineComponent({
 
     // 验证规则
     const rules = {
-      receivedTime: [{ required: true, trigger: "change" }],
-      name: [{ required: true, trigger: "blur" }],
+      receivedTime: [{ required: true, message: "收到时间不能为空" }],
+      name: [
+        { required: true, trigger: "blur", message: "来信来访人不能为空" },
+      ],
       // company: [{ required: true, trigger: "blur" }],
-      identityNumber: [{ required: true, trigger: "blur" }],
-      tel: [{ required: true, trigger: "blur" }],
+      identityNumber: [
+        { required: true, trigger: "blur", message: "身份证号不能为空" },
+      ],
+      tel: [{ required: true, trigger: "blur", message: "联系方式不能为空" }],
       // address: [{ required: true, trigger: "blur" }],
       // socialRelationship: [{ required: true, trigger: "blur" }],
-      mainAppeal: [{ required: true, trigger: "blur" }],
+      mainAppeal: [
+        { required: true, trigger: "blur", message: "主要诉求不能为空" },
+      ],
       // receptionist: [{ required: true, trigger: "blur" }],
-      handledTime: [{ required: true, trigger: "change" }],
-      opinions: [{ required: true, trigger: "blur" }],
-      isEnd: [{ required: true, trigger: "change" }],
-      appealWaysToDisplay: [{ required: true, trigger: "change" }],
+      handledTime: [{ required: true, message: "处理时间不能为空" }],
+      opinions: [{ required: true, trigger: "blur", message: "建议不能为空" }],
+      isEnd: [{ required: true, message: "是否结束不能为空" }],
+      appealWaysToDisplay: [{ required: true, message: "来访方式不能为空" }],
       // leader: [{ required: true, trigger: "blur" }],
       // remark: [{ required: true, trigger: "blur" }],
     };
@@ -203,17 +216,96 @@ export default defineComponent({
       getInfoById(id);
     }
 
-    console.log(router);
+    // console.log(router);
+
+    const handleRemove = (file) => {
+      const index = fileList.value.indexOf(file);
+      const newFileList = fileList.value.slice();
+      newFileList.splice(index, 1);
+      fileList.value = newFileList;
+    };
+
+    const beforeUpload = (file) => {
+      fileList.value = [...fileList.value, file];
+      return false;
+    };
     // 添加方法
     const addInfos = async () => {
+      // 添加信息
+
       const res = await addInfo(formState.value);
       console.log(res);
-      if (res.status == 201) {
-        message.success("添加成功！");
+
+      const id = res.data;
+
+      // 添加文件
+      const formData = new FormData();
+      fileList.value.forEach((file) => {
+        formData.append("formData", file);
+      });
+      console.log(formData);
+      uploading.value = true; // You can use any AJAX library you like
+
+      formData.append("basicInfoId", id);
+      const result = await addFilesById(id, formData);
+
+      if (result.status == 204) {
+        fileList.value = [];
+        uploading.value = false;
+        message.success("保存成功");
         router.push("/list");
       } else {
-        message.error("添加失败！");
+        uploading.value = false;
+        message.error("保存失败");
       }
+
+      console.log(result);
+
+      // console.log(result);
+
+      // // 文件上传
+      // const formData = new FormData();
+      // fileList.value.forEach((file) => {
+      //   formData.append("file[]", file);
+      // });
+      // uploading.value = true; // You can use any AJAX library you like
+
+      // // request("https://www.mocky.io/v2/5cc8019d300000980a055e76", {
+      // //   method: "post",
+      // //   data: formData,
+      // // })
+      // //   .then(() => {
+      // //     fileList.value = [];
+      // //     uploading.value = false;
+      // //     message.success("upload successfully.");
+      // //   })
+      // //   .catch(() => {
+      // //     uploading.value = false;
+      // //     message.error("upload failed.");
+      // //   });
+      // console.log(formData);
+
+      // addInfoAndFiles(formState.value, formData)
+      //   .then((res) => {
+      //     console.log(res);
+      //     fileList.value = [];
+      //     uploading.value = false;
+      //     // message.success("upload successfully.");
+      //   })
+      //   .catch((err) => {
+      //     console.log(err);
+      //     uploading.value = false;
+      //     // message.error("upload failed.");
+      //   });
+
+      // // const res = await addInfo(formState.value);
+      // // console.log(res);
+      // // if (res.status == 201) {
+      // //   message.success("添加成功！");
+      // //   router.push("/list");
+      // // } else {
+      // //   message.error("添加失败！");
+      // // }
     };
 
     // 修改方法
@@ -270,42 +362,27 @@ export default defineComponent({
       formRef.value.resetFields();
     };
 
-    const fileList = ref([]);
-    const uploading = ref(false);
+    // const handleUpload = () => {
+    //   const formData = new FormData();
+    //   fileList.value.forEach((file) => {
+    //     formData.append("files[]", file);
+    //   });
+    //   uploading.value = true; // You can use any AJAX library you like
 
-    const handleRemove = (file) => {
-      const index = fileList.value.indexOf(file);
-      const newFileList = fileList.value.slice();
-      newFileList.splice(index, 1);
-      fileList.value = newFileList;
-    };
-
-    const beforeUpload = (file) => {
-      fileList.value = [...fileList.value, file];
-      return false;
-    };
-
-    const handleUpload = () => {
-      const formData = new FormData();
-      fileList.value.forEach((file) => {
-        formData.append("files[]", file);
-      });
-      uploading.value = true; // You can use any AJAX library you like
-
-      request("https://www.mocky.io/v2/5cc8019d300000980a055e76", {
-        method: "post",
-        data: formData,
-      })
-        .then(() => {
-          fileList.value = [];
-          uploading.value = false;
-          message.success("upload successfully.");
-        })
-        .catch(() => {
-          uploading.value = false;
-          message.error("upload failed.");
-        });
-    };
+    //   request("https://www.mocky.io/v2/5cc8019d300000980a055e76", {
+    //     method: "post",
+    //     data: formData,
+    //   })
+    //     .then(() => {
+    //       fileList.value = [];
+    //       uploading.value = false;
+    //       message.success("upload successfully.");
+    //     })
+    //     .catch(() => {
+    //       uploading.value = false;
+    //       message.error("upload failed.");
+    //     });
+    // };
 
     return {
       labelCol: {
@@ -324,7 +401,7 @@ export default defineComponent({
       uploading,
       handleRemove,
       beforeUpload,
-      handleUpload,
+      // handleUpload,
     };
   },
 });

@@ -40,6 +40,14 @@ const router =  createRouter({
                 title: '登录'
             }
         }
+        ,
+        {
+            path: '/test',
+            component: () => import('../views/test'),
+            meta: {
+                title: '测试'
+            }
+        }
 
     ]
 })

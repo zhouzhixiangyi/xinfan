@@ -1,11 +1,6 @@
 <template>
   <div class="data-table">
-    <a-form
-      layout="inline"
-      :model="formState"
-      @finish="handleFinish"
-      @finishFailed="handleFinishFailed"
-    >
+    <a-form layout="inline" :model="formState">
       <a-form-item>
         <a-input v-model:value="searchForm.name" placeholder="来信来访人">
         </a-input>
@@ -49,11 +44,11 @@
           <a>删除</a>
         </a-popconfirm>
       </template>
-      <template #expandedRowRender="{ record }">
+      <!-- <template #expandedRowRender>
         <a-list
           size="small"
           bordered
-          :data-source="record.relatedMaterials"
+          :data-source="data1"
           class="list"
         >
           <template #renderItem="{ item }">
@@ -62,15 +57,70 @@
             >
           </template>
         </a-list>
+      </template> -->
+      <template #expandedRowRender="{ record }">
+        <div class="list">
+          <a-list size="small" bordered :data-source="record.relatedMaterials">
+            <template #renderItem="{ item }">
+              <a-list-item
+                ><a
+                  :href="
+                    item.materialURL +
+                    '?fileName=' +
+                    item.fileName +
+                    '&basicInfoId=' +
+                    item.xinfangBasicInformationId
+                  "
+                  >{{ item.fileName }}</a
+                >
+                <a
+                  @click="deletefile(item.xinfangBasicInformationId, item.id)"
+                  class="delete-icon"
+                  ><DeleteOutlined /></a
+              ></a-list-item>
+            </template>
+          </a-list>
+
+          <a-upload
+           :file-list="fileList"
+          :remove="handleRemove"
+          :before-upload="beforeUpload"
+          :multiple="true"
+          >
+            <a-button>
+              <upload-outlined></upload-outlined>
+              选择文件
+            </a-button>
+            <a-button
+              type="primary"
+              :disabled="fileList.length === 0"
+              :loading="uploading"
+              style="margin-top: 16px"
+              @click="handleUpload(record.id,record)"
+            >
+              {{ uploading ? "正在上传" : "点击上传" }}
+            </a-button>
+          </a-upload>
+        </div>
       </template>
     </a-table>
   </div>
 </template>
 <script>
 import { defineComponent, ref } from "vue";
-import { getInfos, getInfoByConditions, deleteInfo } from "@/api/info";
+import { DeleteOutlined } from "@ant-design/icons-vue";
+import { useRouter } from "vue-router";
+import {
+  getInfos,
+  getInfoByConditions,
+  deleteInfo,
+  getFilesById,
+  deleteFileById,
+  addFilesById,
+} from "@/api/info";
 // import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
+import Moment from "moment";
 const columns = [
   {
     title: "序号",
@@ -78,6 +128,8 @@ const columns = [
     customRender: ({ index }) => `${index + 1}`,
     fixed: "left",
     align: "center",
+    // dataIndex: "index",
+    // key: "index",
   },
   {
     title: "收到时间",
@@ -85,8 +137,8 @@ const columns = [
     dataIndex: "receivedTime",
     key: "receivedTime",
     sorter: (a, b) => {
-      let aTime = new Date(a.ReceivedTime).getTime();
-      let bTime = new Date(b.ReceivedTime).getTime();
+      let aTime = new Date(a.receivedTime).getTime();
+      let bTime = new Date(b.receivedTime).getTime();
       return aTime - bTime;
     },
     sortDirections: ["ascend", "descend"],
@@ -221,39 +273,15 @@ const columns = [
     align: "center",
   },
 ];
-//let data = [];
-
-// for (let i = 0; i < 100; i++) {
-//   data.push({
-//     key: i,
-//     Id: i,
-//     Name: `美猴王${i}`,
-//     ReceivedTime: `2021-02-24 09:50:23`,
-//     Company: `互联网公司${i}`,
-//     IdentityNumber: `100${i}`,
-//     Tel: i,
-//     Address: `中国`,
-//     SocialRelationship: `无`,
-//     MainAppeal: `看看`,
-//     Receptionist: `someone`,
-//     HandledTime: `2021-03-24 10:50:23`,
-//     Opinions: `通过`,
-//     IsEnd: `未终结`,
-//     AppealWays: `走访`,
-//     Leader: `someone`,
-//     Remark: `无`,
-//     RelatedMaterials: [
-//       "www.baidu.com",
-//       "www.zhihu.com",
-//       "www.github.com",
-//       "www.bing.com",
-//       "www.antdv.com",
-//     ],
-//   });
-// }
 
 export default defineComponent({
+  components: {
+    DeleteOutlined,
+  },
   setup() {
+    const router = useRouter();
+    const fileList = ref([]);
+    const uploading = ref(false);
     // const router = useRouter();
     let data = ref([]);
     let searchForm = ref({
@@ -266,15 +294,36 @@ export default defineComponent({
     const get = async () => {
       let res = await getInfos();
       res = res.data;
+      console.log("------------------");
+      // console.log(res);
       let _res = [];
-      res.map((item, index) => {
-        item.isEnd ? (item.isEnd = "已终结") : (item.isEnd = "未终结");
-        item.receivedTime = item.receivedTime.replace("T", " ");
-        item.handledTime = item.handledTime.replace("T", " ");
-        _res.push(Object.assign({}, item, { key: index, index: index }));
+
+      res = res.sort((a, b) => {
+        let aTime = Moment(a.receivedTime);
+        let bTime = Moment(b.receivedTime);
+        return bTime - aTime;
       });
-      data.value = _res;
+      let results = await Promise.all(
+        res.map(async (item, index) => {
+          // 等待异步操作完成，返回执行结果
+
+          const result = await getFilesById(item.id);
+          item.relatedMaterials = result.data;
+          item.receivedTime = Moment(item.receivedTime).format(
+            "YYYY-MM-DD HH:mm:ss"
+          );
+          item.handledTime = Moment(item.handledTime).format(
+            "YYYY-MM-DD HH:mm:ss"
+          );
+          _res.push(Object.assign({}, item, { key: index, index: index + 1 }));
+          return _res;
+        })
+      );
+      console.log(results);
+
       console.log(_res);
+      data.value = _res;
+      console.log(data.value);
     };
     get();
 
@@ -317,9 +366,69 @@ export default defineComponent({
       console.log(res);
       if (res.status == 204) {
         message.success("删除成功！");
-        location.reload()
+        router.go(0)
       } else {
         message.error("删除失败！");
+      }
+    };
+
+    const deletefile = async (basicInfoId, id) => {
+      const res = await deleteFileById(basicInfoId, id);
+      if (res.status == 204) {
+        message.success("删除成功");
+        router.go(0)
+      } else {
+        message.error("删除失败");
+      }
+    };
+    const handleRemove = (file) => {
+      const index = fileList.value.indexOf(file);
+      const newFileList = fileList.value.slice();
+      newFileList.splice(index, 1);
+      fileList.value = newFileList;
+    };
+
+    const beforeUpload = (file) => {
+      fileList.value = [...fileList.value, file];
+      return false;
+    };
+
+    const handleUpload = async (id, record) => {
+      // 添加文件
+      const formData = new FormData();
+      // console.log(id)
+      
+      const existsFilenams = [];
+      record.relatedMaterials.forEach((item) => {
+        existsFilenams.push(item.fileName);
+      })
+      // console.log(existsFilenams);
+
+      let flag = false;
+
+      fileList.value.forEach((file) => {
+        if(existsFilenams.includes(file.name)){
+          flag = true;
+        }
+        formData.append("formData", file);
+      });
+      if(flag){
+        return message.error('不能上传文件名一样的文件！')
+      }
+      console.log(formData);
+      uploading.value = true; // You can use any AJAX library you like
+
+      formData.append("basicInfoId", id);
+      const result = await addFilesById(id, formData);
+      console.log(result);
+      if (result.status == 204) {
+        fileList.value = [];
+        uploading.value = false;
+        message.success("上传成功");
+        router.go(0)
+      } else {
+        uploading.value = false;
+        message.error("上传失败");
       }
     };
 
@@ -329,6 +438,12 @@ export default defineComponent({
       searchForm,
       searchInfo,
       onDelete,
+      deletefile,
+      fileList,
+      uploading,
+      handleUpload,
+      handleRemove,
+      beforeUpload,
     };
   },
 });
@@ -339,6 +454,12 @@ export default defineComponent({
   .list {
     margin-left: 145px;
     width: 500px;
+    .delete-icon {
+      float: right;
+    }
+    .upload {
+      float: right;
+    }
   }
 }
 </style>

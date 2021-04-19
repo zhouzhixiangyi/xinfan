@@ -1,74 +1,80 @@
+
 <template>
-  <a-form :model="formState" :label-col="labelCol" :wrapper-col="wrapperCol">
-    <a-form-item label="">
-      <a-input v-model:value="formState.name" />
-    </a-form-item>
-    <a-form-item label="Activity zone">
-      <a-select v-model:value="formState.region" placeholder="please select your zone">
-        <a-select-option value="shanghai">Zone one</a-select-option>
-        <a-select-option value="beijing">Zone two</a-select-option>
-      </a-select>
-    </a-form-item>
-    <a-form-item label="Activity time">
-      <a-date-picker
-        v-model:value="formState.date1"
-        show-time
-        placeholder="选择时间"
-        style="width: 100%"
-      />
-    </a-form-item>
-    <a-form-item label="Instant delivery">
-      <a-switch v-model:checked="formState.delivery" />
-    </a-form-item>
-    <a-form-item label="Activity type">
-      <a-checkbox-group v-model:value="formState.type">
-        <a-checkbox value="1" name="type">Online</a-checkbox>
-        <a-checkbox value="2" name="type">Promotion</a-checkbox>
-        <a-checkbox value="3" name="type">Offline</a-checkbox>
-      </a-checkbox-group>
-    </a-form-item>
-    <a-form-item label="Resources">
-      <a-radio-group v-model:value="formState.resource">
-        <a-radio value="1">Sponsor</a-radio>
-        <a-radio value="2">Venue</a-radio>
-      </a-radio-group>
-    </a-form-item>
-    <a-form-item label="Activity form">
-      <a-input v-model:value="formState.desc" type="textarea" />
-    </a-form-item>
-    <a-form-item :wrapper-col="{ span: 14, offset: 4 }">
-      <a-button type="primary" @click="onSubmit">Create</a-button>
-      <a-button style="margin-left: 10px">Cancel</a-button>
-    </a-form-item>
-  </a-form>
+  <div class="clearfix">
+    <a-upload :file-list="fileList" :remove="handleRemove" :before-upload="beforeUpload">
+      <a-button>
+        <upload-outlined></upload-outlined>
+        Select File
+      </a-button>
+    </a-upload>
+    <a-button
+      type="primary"
+      :disabled="fileList.length === 0"
+      :loading="uploading"
+      style="margin-top: 16px"
+      @click="handleUpload"
+    >
+      {{ uploading ? 'Uploading' : 'Start Upload' }}
+    </a-button>
+  </div>
 </template>
 <script>
-import { defineComponent, reactive, toRaw } from 'vue';
+import request from 'umi-request';
+import { UploadOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
+import { defineComponent, ref } from 'vue';
 export default defineComponent({
-  setup() {
-    const formState = reactive({
-      name: '',
-      region: undefined,
-      date1: undefined,
-      delivery: false,
-      type: [],
-      resource: '',
-      desc: '',
-    });
+  components: {
+    UploadOutlined,
+  },
 
-    const onSubmit = () => {
-      console.log('submit!', toRaw(formState));
+  setup() {
+    const fileList = ref([]);
+    const uploading = ref(false);
+
+    const handleRemove = file => {
+      const index = fileList.value.indexOf(file);
+      const newFileList = fileList.value.slice();
+      newFileList.splice(index, 1);
+      fileList.value = newFileList;
+    };
+
+    const beforeUpload = file => {
+      fileList.value = [...fileList.value, file];
+      return false;
+    };
+
+    const handleUpload = () => {
+      let formData = new FormData();
+      fileList.value.forEach(file => {
+        formData.append('formData', file);
+      });
+      uploading.value = true; // You can use any AJAX library you like
+
+      formData.append('basicInfoId', '539c08a2-766b-45f8-a6df-228b3daee8bd')
+
+      request('http://192.168.0.104:5000/api/xinfangBasicInformations/'+'539c08a2-766b-45f8-a6df-228b3daee8bd'+'/xinfangRelatedMaterials', {
+        method: 'post',
+        data: formData,
+      })
+        .then((res) => {
+          console.log(res)
+          fileList.value = [];
+          uploading.value = false;
+          message.success('upload successfully.');
+        })
+        .catch(() => {
+          uploading.value = false;
+          message.error('upload failed.');
+        });
     };
 
     return {
-      labelCol: {
-        span: 4,
-      },
-      wrapperCol: {
-        span: 14,
-      },
-      formState,
-      onSubmit,
+      fileList,
+      uploading,
+      handleRemove,
+      beforeUpload,
+      handleUpload,
     };
   },
 });
