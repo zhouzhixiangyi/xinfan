@@ -11,9 +11,9 @@ module.exports = {
                   'border-radius-base': '4px',// 组件/浮层圆角
                   'box-shadow-base': '0 2px 8px rgba(0, 0, 0, 0.15)', // 浮层阴影
                   'border-color-base': '#d9d9d9', // 边框色
-                  'text-color': 'rgba(0, 0, 0, 0.65)',
-                  'text-color-secondary': 'rgba(0, 0, 0, 0.45)',
-                  'font-size-base': '14px',
+                  'text-color': 'rgba(0, 0, 0, 1.0)',
+                  'text-color-secondary': 'rgba(0, 0, 0, 0.9)',
+                  'font-size-base': '16px',
                   'success-color': '#52c41a',
                   
             },

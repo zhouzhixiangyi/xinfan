@@ -1,4 +1,7 @@
-import { Button, Form, Input, Layout, Menu, Table, Breadcrumb, Select, DatePicker, Switch, List, Upload, Divider,ConfigProvider, Popconfirm} from 'ant-design-vue';
+import {
+    Button, Form, Input, Layout, Menu, Table, Breadcrumb, Select, DatePicker, Switch, List, Upload,
+    Divider, ConfigProvider, Popconfirm, Row, Col, Dropdown, Avatar
+} from 'ant-design-vue';
 import 'ant-design-vue/dist/antd.less';
 
 
@@ -19,7 +22,11 @@ const components = [
     Upload,
     Divider,
     ConfigProvider,
-    Popconfirm
+    Popconfirm,
+    Row,
+    Col,
+    Dropdown,
+    Avatar,
 ]
 
 export function setupAntd(app) {

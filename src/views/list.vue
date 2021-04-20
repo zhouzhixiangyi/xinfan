@@ -60,47 +60,59 @@
       </template> -->
       <template #expandedRowRender="{ record }">
         <div class="list">
-          <a-list size="small" bordered :data-source="record.relatedMaterials">
-            <template #renderItem="{ item }">
-              <a-list-item
-                ><a
-                  :href="
-                    item.materialURL +
-                    '?fileName=' +
-                    item.fileName +
-                    '&basicInfoId=' +
-                    item.xinfangBasicInformationId
-                  "
-                  >{{ item.fileName }}</a
-                >
-                <a
-                  @click="deletefile(item.xinfangBasicInformationId, item.id)"
-                  class="delete-icon"
-                  ><DeleteOutlined /></a
-              ></a-list-item>
-            </template>
-          </a-list>
-
-          <a-upload
-           :file-list="fileList"
-          :remove="handleRemove"
-          :before-upload="beforeUpload"
-          :multiple="true"
-          >
-            <a-button>
-              <upload-outlined></upload-outlined>
-              选择文件
-            </a-button>
-            <a-button
-              type="primary"
-              :disabled="fileList.length === 0"
-              :loading="uploading"
-              style="margin-top: 16px"
-              @click="handleUpload(record.id,record)"
-            >
-              {{ uploading ? "正在上传" : "点击上传" }}
-            </a-button>
-          </a-upload>
+          <a-row>
+            <a-col :span="16">
+              <a-list
+                size="small"
+                bordered
+                :data-source="record.relatedMaterials"
+              >
+                <template #renderItem="{ item }">
+                  <a-list-item
+                    ><a
+                      :href="
+                        item.materialURL +
+                        '?fileName=' +
+                        item.fileName +
+                        '&basicInfoId=' +
+                        item.xinfangBasicInformationId
+                      "
+                      alt="单击文件下载文件"
+                      >{{ item.fileName }}</a
+                    >
+                    <a
+                      @click="
+                        deletefile(item.xinfangBasicInformationId, item.id)
+                      "
+                      class="delete-icon"
+                      ><DeleteOutlined /></a
+                  ></a-list-item>
+                </template>
+              </a-list>
+            </a-col>
+            <a-col :span="1"></a-col>
+            <a-col :span="7">
+              <a-upload
+                :file-list="fileList"
+                :remove="handleRemove"
+                :before-upload="beforeUpload"
+              >
+                <a-button>
+                  <upload-outlined></upload-outlined>
+                  选择文件
+                </a-button>
+              </a-upload>
+              <a-button
+                type="primary"
+                :disabled="fileList.length === 0"
+                :load="uploading"
+                style="margin-top: 16px"
+                @click="handleUpload(record)"
+              >
+                {{ uploading ? "正在上传" : "文件上传" }}
+              </a-button>
+            </a-col>
+          </a-row>
         </div>
       </template>
     </a-table>
@@ -124,9 +136,9 @@ import Moment from "moment";
 const columns = [
   {
     title: "序号",
-    width: 60,
+    width: 80,
     customRender: ({ index }) => `${index + 1}`,
-    fixed: "left",
+    // fixed: "left",
     align: "center",
     // dataIndex: "index",
     // key: "index",
@@ -144,6 +156,7 @@ const columns = [
     sortDirections: ["ascend", "descend"],
     //fixed: "left",
     align: "center",
+    defaultSortOrder: "descend",
   },
   {
     title: "来信来访人",
@@ -175,7 +188,7 @@ const columns = [
     title: "联系方式",
     dataIndex: "tel",
     key: "tel",
-    width: 120,
+    width: 140,
     align: "center",
   },
   {
@@ -199,6 +212,17 @@ const columns = [
     width: 150,
     ellipsis: true,
     align: "center",
+    customCell: () => {
+      return {
+          style:{
+            maxWidth:260,
+            overflow:'hidden',
+            whiteSpace:'nowrap',
+            textOverflow:'ellipsis',
+            cursor:'pointer',
+          }
+        }
+    }
   },
   {
     title: "接访人",
@@ -279,9 +303,9 @@ export default defineComponent({
     DeleteOutlined,
   },
   setup() {
+    document.title = "信息列表";
     const router = useRouter();
-    const fileList = ref([]);
-    const uploading = ref(false);
+
     // const router = useRouter();
     let data = ref([]);
     let searchForm = ref({
@@ -303,6 +327,7 @@ export default defineComponent({
         let bTime = Moment(b.receivedTime);
         return bTime - aTime;
       });
+
       let results = await Promise.all(
         res.map(async (item, index) => {
           // 等待异步操作完成，返回执行结果
@@ -315,7 +340,7 @@ export default defineComponent({
           item.handledTime = Moment(item.handledTime).format(
             "YYYY-MM-DD HH:mm:ss"
           );
-          _res.push(Object.assign({}, item, { key: index, index: index + 1 }));
+          _res.push(Object.assign({}, item, { key: index }));
           return _res;
         })
       );
@@ -328,59 +353,70 @@ export default defineComponent({
     get();
 
     const searchInfo = async () => {
-      let startTime = searchForm.value.startTime;
-      let endTime = searchForm.value.endTime;
-      if (
-        startTime != null &&
-        startTime != "" &&
-        endTime != null &&
-        endTime != "" &&
-        startTime > endTime
-      ) {
-        return message.error("起始时间不能大于结束时间");
-      }
+      message.loading("正在执行...", 1.5).then(async () => {
+        let startTime = searchForm.value.startTime;
+        let endTime = searchForm.value.endTime;
+        if (
+          startTime != null &&
+          startTime != "" &&
+          endTime != null &&
+          endTime != "" &&
+          startTime > endTime
+        ) {
+          return message.error("起始时间不能大于结束时间");
+        }
 
-      if (startTime != null && startTime != "") {
-        searchForm.value.startTime = startTime.format("YYYY-MM-DD hh:mm:ss");
-      }
-      if (endTime != null && endTime != "") {
-        searchForm.value.endTime = endTime.format("YYYY-MM-DD hh:mm:ss");
-      }
+        if (startTime != null && startTime != "") {
+          searchForm.value.startTime = startTime.format("YYYY-MM-DD hh:mm:ss");
+        }
+        if (endTime != null && endTime != "") {
+          searchForm.value.endTime = endTime.format("YYYY-MM-DD hh:mm:ss");
+        }
 
-      //console.log(searchForm.value);
-      let res = await getInfoByConditions(searchForm.value);
-      res = res.data;
-      let _res = [];
-      res.map((item, index) => {
-        item.isEnd ? (item.isEnd = "已终结") : (item.isEnd = "未终结");
-        item.receivedTime = item.receivedTime.replace("T", " ");
-        item.handledTime = item.handledTime.replace("T", " ");
-        _res.push(Object.assign({}, item, { key: index, index: index }));
+        //console.log(searchForm.value);
+        let res = await getInfoByConditions(searchForm.value);
+        res = res.data;
+        let _res = [];
+        res.map((item, index) => {
+          item.isEnd ? (item.isEnd = "已终结") : (item.isEnd = "未终结");
+          item.receivedTime = item.receivedTime.replace("T", " ");
+          item.handledTime = item.handledTime.replace("T", " ");
+          _res.push(Object.assign({}, item, { key: index, index: index }));
+        });
+        data.value = _res;
+        message.success("查询成功");
+        console.log(_res);
       });
-      data.value = _res;
-      console.log(_res);
     };
 
     const onDelete = async (id) => {
-      const res = await deleteInfo(id);
-      console.log(res);
-      if (res.status == 204) {
-        message.success("删除成功！");
-        router.go(0)
-      } else {
-        message.error("删除失败！");
-      }
+      message.loading("正在执行...", 1.5).then(async () => {
+        const res = await deleteInfo(id);
+        console.log(res);
+        if (res.status == 204) {
+          router.go(0);
+          message.success("删除成功！");
+        } else {
+          message.error("删除失败！");
+        }
+      });
     };
 
     const deletefile = async (basicInfoId, id) => {
-      const res = await deleteFileById(basicInfoId, id);
-      if (res.status == 204) {
-        message.success("删除成功");
-        router.go(0)
-      } else {
-        message.error("删除失败");
-      }
+      message.loading("正在执行...", 1.5).then(async () => {
+        const res = await deleteFileById(basicInfoId, id);
+        if (res.status == 204) {
+          router.go(0);
+          message.success("删除成功");
+        } else {
+          message.error("删除失败");
+        }
+      });
     };
+
+    const fileList = ref([]);
+    const uploading = ref(false);
+
     const handleRemove = (file) => {
       const index = fileList.value.indexOf(file);
       const newFileList = fileList.value.slice();
@@ -393,43 +429,49 @@ export default defineComponent({
       return false;
     };
 
-    const handleUpload = async (id, record) => {
-      // 添加文件
-      const formData = new FormData();
-      // console.log(id)
-      
-      const existsFilenams = [];
-      record.relatedMaterials.forEach((item) => {
-        existsFilenams.push(item.fileName);
-      })
-      // console.log(existsFilenams);
+    const handleUpload = async (record) => {
+      message.loading("正在执行...", 1.5).then(async () => {
+        // 添加文件
+        const id = record.id;
+        const formData = new FormData();
+        // console.log(id)
+        // 判断是否有同名的文件
+        const existsFilenams = [];
+        record.relatedMaterials.forEach((item) => {
+          existsFilenams.push(item.fileName);
+        });
+        // console.log(existsFilenams);
 
-      let flag = false;
+        let flag = false;
 
-      fileList.value.forEach((file) => {
-        if(existsFilenams.includes(file.name)){
-          flag = true;
+        fileList.value.forEach((file) => {
+          if (existsFilenams.includes(file.name)) {
+            flag = true;
+          }
+          formData.append("formData", file);
+        });
+        if (flag) {
+          fileList.value = [];
+          return message.error("不能上传文件名一样的文件！");
         }
-        formData.append("formData", file);
-      });
-      if(flag){
-        return message.error('不能上传文件名一样的文件！')
-      }
-      console.log(formData);
-      uploading.value = true; // You can use any AJAX library you like
+        // console.log(formData);
+        uploading.value = true; // You can use any AJAX library you like
 
-      formData.append("basicInfoId", id);
-      const result = await addFilesById(id, formData);
-      console.log(result);
-      if (result.status == 204) {
-        fileList.value = [];
-        uploading.value = false;
-        message.success("上传成功");
-        router.go(0)
-      } else {
-        uploading.value = false;
-        message.error("上传失败");
-      }
+        formData.append("basicInfoId", id);
+        const result = await addFilesById(id, formData);
+        console.log(result);
+        if (result.status == 204) {
+          fileList.value = [];
+
+          uploading.value = false;
+          // get();
+          router.go(0);
+          message.success("上传成功");
+        } else {
+          uploading.value = false;
+          message.error("上传失败");
+        }
+      });
     };
 
     return {
@@ -453,7 +495,7 @@ export default defineComponent({
   margin-top: 5px;
   .list {
     margin-left: 145px;
-    width: 500px;
+    width: 800px;
     .delete-icon {
       float: right;
     }

@@ -1,7 +1,9 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory  } from 'vue-router'
+
+const routerHistory = createWebHistory() // 引入路由方式
 
 const router =  createRouter({
-    history: createWebHashHistory(),
+    history: routerHistory,
     routes: [
         {
             path: '/',
@@ -47,7 +49,15 @@ const router =  createRouter({
             meta: {
                 title: '测试'
             }
+        },
+        {
+            path: '/login2',
+            component: () => import('../views/login2'),
+            meta: {
+                title: '登录'
+            }
         }
+        ,
 
     ]
 })

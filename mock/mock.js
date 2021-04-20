@@ -1,7 +1,7 @@
 import Mock from 'mockjs'
 
 Mock.mock(
-    '/api/login',
+    '/mock/login',
     'post',
     (req) => {
         const { password, user } = JSON.parse(req.body)

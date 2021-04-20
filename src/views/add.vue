@@ -135,7 +135,7 @@ import { UploadOutlined } from "@ant-design/icons-vue";
 import { defineComponent, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getInfosById, addInfo, editInfo, addFilesById } from "@/api/info";
-
+import Moment from "moment";
 import { message } from "ant-design-vue";
 
 export default defineComponent({
@@ -178,8 +178,12 @@ export default defineComponent({
       // company: [{ required: true, trigger: "blur" }],
       identityNumber: [
         { required: true, trigger: "blur", message: "身份证号不能为空" },
+        { len: 18, message: "身份证号只能是18位", trigger: "blur" },
       ],
-      tel: [{ required: true, trigger: "blur", message: "联系方式不能为空" }],
+      tel: [
+        { required: true, trigger: "blur", message: "联系方式不能为空" },
+        { max: 11, message: "联系方式不能超过11位", trigger: "blur" },
+      ],
       // address: [{ required: true, trigger: "blur" }],
       // socialRelationship: [{ required: true, trigger: "blur" }],
       mainAppeal: [
@@ -193,6 +197,7 @@ export default defineComponent({
       // leader: [{ required: true, trigger: "blur" }],
       // remark: [{ required: true, trigger: "blur" }],
     };
+    document.title = "添加数据";
 
     //发送请求获取信息
     const getInfoById = async (id) => {
@@ -214,6 +219,7 @@ export default defineComponent({
       console.log(id);
       // 有id的话就是修改，获取它的信息
       getInfoById(id);
+      document.title = "修改信息";
     }
 
     // console.log(router);
@@ -231,117 +237,133 @@ export default defineComponent({
     };
     // 添加方法
     const addInfos = async () => {
-      // 添加信息
+      message.loading("正在执行...", 1.5).then(async () => {
+        // 添加信息
 
-      const res = await addInfo(formState.value);
-      console.log(res);
+        formState.value.appealWays = formState.value.appealWaysToDisplay;
 
-      const id = res.data;
+        console.log("------------000");
+        console.log(formState.value);
+        const res = await addInfo(formState.value);
+        console.log(res);
 
-      // 添加文件
-      const formData = new FormData();
-      fileList.value.forEach((file) => {
-        formData.append("formData", file);
+        const id = res.data;
+
+        // 添加文件
+        const formData = new FormData();
+        fileList.value.forEach((file) => {
+          formData.append("formData", file);
+        });
+        console.log(formData);
+        uploading.value = true; // You can use any AJAX library you like
+
+        formData.append("basicInfoId", id);
+        const result = await addFilesById(id, formData);
+
+        if (result.status == 204) {
+          fileList.value = [];
+          uploading.value = false;
+          message.success("保存成功");
+          router.push("/list");
+        } else {
+          uploading.value = false;
+          message.error("保存失败");
+        }
+
+        console.log(result);
+
+        // console.log(result);
+
+        // // 文件上传
+        // const formData = new FormData();
+        // fileList.value.forEach((file) => {
+        //   formData.append("file[]", file);
+        // });
+        // uploading.value = true; // You can use any AJAX library you like
+
+        // // request("https://www.mocky.io/v2/5cc8019d300000980a055e76", {
+        // //   method: "post",
+        // //   data: formData,
+        // // })
+        // //   .then(() => {
+        // //     fileList.value = [];
+        // //     uploading.value = false;
+        // //     message.success("upload successfully.");
+        // //   })
+        // //   .catch(() => {
+        // //     uploading.value = false;
+        // //     message.error("upload failed.");
+        // //   });
+        // console.log(formData);
+
+        // addInfoAndFiles(formState.value, formData)
+        //   .then((res) => {
+        //     console.log(res);
+        //     fileList.value = [];
+        //     uploading.value = false;
+        //     // message.success("upload successfully.");
+        //   })
+        //   .catch((err) => {
+        //     console.log(err);
+        //     uploading.value = false;
+        //     // message.error("upload failed.");
+        //   });
+
+        // // const res = await addInfo(formState.value);
+        // // console.log(res);
+        // // if (res.status == 201) {
+        // //   message.success("添加成功！");
+        // //   router.push("/list");
+        // // } else {
+        // //   message.error("添加失败！");
+        // // }
       });
-      console.log(formData);
-      uploading.value = true; // You can use any AJAX library you like
-
-      formData.append("basicInfoId", id);
-      const result = await addFilesById(id, formData);
-
-      if (result.status == 204) {
-        fileList.value = [];
-        uploading.value = false;
-        message.success("保存成功");
-        router.push("/list");
-      } else {
-        uploading.value = false;
-        message.error("保存失败");
-      }
-
-      console.log(result);
-
-      // console.log(result);
-
-      // // 文件上传
-      // const formData = new FormData();
-      // fileList.value.forEach((file) => {
-      //   formData.append("file[]", file);
-      // });
-      // uploading.value = true; // You can use any AJAX library you like
-
-      // // request("https://www.mocky.io/v2/5cc8019d300000980a055e76", {
-      // //   method: "post",
-      // //   data: formData,
-      // // })
-      // //   .then(() => {
-      // //     fileList.value = [];
-      // //     uploading.value = false;
-      // //     message.success("upload successfully.");
-      // //   })
-      // //   .catch(() => {
-      // //     uploading.value = false;
-      // //     message.error("upload failed.");
-      // //   });
-      // console.log(formData);
-
-      // addInfoAndFiles(formState.value, formData)
-      //   .then((res) => {
-      //     console.log(res);
-      //     fileList.value = [];
-      //     uploading.value = false;
-      //     // message.success("upload successfully.");
-      //   })
-      //   .catch((err) => {
-      //     console.log(err);
-      //     uploading.value = false;
-      //     // message.error("upload failed.");
-      //   });
-
-      // // const res = await addInfo(formState.value);
-      // // console.log(res);
-      // // if (res.status == 201) {
-      // //   message.success("添加成功！");
-      // //   router.push("/list");
-      // // } else {
-      // //   message.error("添加失败！");
-      // // }
     };
 
     // 修改方法
     const editInfoById = async () => {
-      const info = formState.value;
-      let jsonInfo = [];
+      message.loading("正在执行...", 1.5).then(async () => {
+        const info = formState.value;
+        let jsonInfo = [];
 
-      Object.keys(info).forEach(function (key) {
-        if (key != "id" && key != "appealWaysToDisplay") {
-          // if(key == 'appealWaysToDisplay') key = 'appealWays'
-          jsonInfo.push({
-            op: "replace",
-            path: `/${key}`,
-            value: `${info[key]}`,
-          });
+        Object.keys(info).forEach(function (key) {
+          if (key != "id" && key != "appealWaysToDisplay") {
+            // if(key == 'appealWaysToDisplay') key = 'appealWays'
+            jsonInfo.push({
+              op: "replace",
+              path: `/${key}`,
+              value: `${info[key]}`,
+            });
+          }
+          //console.log(key, info[key]);
+        });
+        jsonInfo.push({
+          op: "replace",
+          path: `/appealWays`,
+          value: `${info["appealWaysToDisplay"]}`,
+        });
+        console.log(jsonInfo);
+
+        const res = await editInfo(formState.value.id, jsonInfo);
+        console.log(res);
+        if (res.status == 204) {
+          message.success("修改成功！");
+          router.push("/list");
+        } else {
+          message.error("修改失败！");
         }
-        //console.log(key, info[key]);
       });
-      jsonInfo.push({
-        op: "replace",
-        path: `/appealWays`,
-        value: `${info["appealWaysToDisplay"]}`,
-      });
-      console.log(jsonInfo);
-
-      const res = await editInfo(formState.value.id, jsonInfo);
-      console.log(res);
-      if (res.status == 204) {
-        message.success("修改成功！");
-        router.push("/list");
-      } else {
-        message.error("修改失败！");
-      }
     };
 
     const onSubmit = () => {
+      const rTime = Moment(formState.value.receivedTime).format(
+        "YYYY-MM-DD HH:mm:ss"
+      );
+      formState.value.receivedTime = rTime;
+      const hTime = Moment(formState.value.handledTime).format(
+        "YYYY-MM-DD HH:mm:ss"
+      );
+      formState.value.handledTime = hTime;
       formRef.value
         .validate()
         .then(() => {

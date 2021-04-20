@@ -37,6 +37,8 @@ export function getInfoByConditions(conditions) {
     })
 }
 
+
+
 export function getInfosById(id) {
     return request({
         url: '/api/xinfangBasicInformations/' + id,

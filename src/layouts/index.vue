@@ -26,17 +26,26 @@
     </a-layout-sider>
     <a-layout>
       <a-layout-header class="app-header">
-        <menu-unfold-outlined
-          v-if="collapsed"
-          class="trigger"
-          @click="() => (collapsed = !collapsed)"
-        />
-        <menu-fold-outlined
-          v-else
-          class="trigger"
-          @click="() => (collapsed = !collapsed)"
-        />
+        <a-row>
+          <a-col>
+            <menu-unfold-outlined
+              v-if="collapsed"
+              class="trigger"
+              @click="() => (collapsed = !collapsed)"
+            />
+            <menu-fold-outlined
+              v-else
+              class="trigger"
+              @click="() => (collapsed = !collapsed)"
+            />
+          </a-col>
+          <a-col>
+            <!-- header 右侧 -->
+            <app-header />
+          </a-col>
+        </a-row>
       </a-layout-header>
+
       <a-layout-content
         :style="{
           margin: '24px 16px',
@@ -47,11 +56,10 @@
       >
         <a-breadcrumb>
           <a-breadcrumb-item>首页</a-breadcrumb-item>
+          <a-breadcrumb-item><a href="">数据管理</a></a-breadcrumb-item>
           <a-breadcrumb-item
-            ><a href="">数据管理</a></a-breadcrumb-item
+            ><a href="">{{ route.meta.title }}</a></a-breadcrumb-item
           >
-          <a-breadcrumb-item><a href="">{{route.meta.title}}</a></a-breadcrumb-item>
-          
         </a-breadcrumb>
         <router-view></router-view>
       </a-layout-content>
@@ -59,6 +67,7 @@
   </a-layout>
 </template>
 <script>
+import AppHeader from "./header/index.vue";
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -69,13 +78,14 @@ import {
 //   scriptUrl: "//at.alicdn.com/t/font_2482616_d5kl03f18ju.js",
 // });
 import { defineComponent, ref } from "vue";
-import { useRoute,  /*useRouter*/ } from "vue-router";
+import { useRoute /*useRouter*/ } from "vue-router";
 export default defineComponent({
   components: {
     MenuUnfoldOutlined,
     MenuFoldOutlined,
     //IconFont,
     RadarChartOutlined,
+    AppHeader,
   },
 
   setup() {
@@ -94,12 +104,12 @@ export default defineComponent({
     return {
       collapsed: ref(false),
       selectedKeys: ref(["1"]),
-      route
+      route,
     };
   },
 });
 </script>
-<style lang="less">
+<style lang="less" scoped>
 .app-wrapper {
   .app-sider {
     left: 0;
@@ -124,6 +134,11 @@ export default defineComponent({
       padding: 0 24px;
       cursor: pointer;
       transition: color 0.3s;
+    }
+    .ant-row{
+      display: flex;
+      justify-content: space-between;
+      padding: 0 16px;
     }
   }
 }
