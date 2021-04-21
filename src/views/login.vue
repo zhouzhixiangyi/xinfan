@@ -69,9 +69,9 @@ export default defineComponent({
         if (mobile.trim() == "" || password.trim() == "")
           return message.warning("用户名和密码不能为空");
         const res = await store.dispatch("LoginResult", formState);
-        console.log(res);
+        // console.log(res);
         if (res.status == 200) {
-          console.log(store.state.token);
+          // console.log(store.state.token);
           router.push("/list");
           message.success("登录成功！");
         } else {

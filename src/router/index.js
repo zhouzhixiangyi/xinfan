@@ -63,7 +63,7 @@ const router =  createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    if (to.path === '/login') {
+    if (to.path === '/login' || to.path === '/login2') {
         next()
     } else {
         let token = localStorage.getItem('token')

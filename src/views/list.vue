@@ -318,7 +318,7 @@ export default defineComponent({
     const get = async () => {
       let res = await getInfos();
       res = res.data;
-      console.log("------------------");
+      // console.log("------------------");
       // console.log(res);
       let _res = [];
 
@@ -344,9 +344,9 @@ export default defineComponent({
           return _res;
         })
       );
-      console.log(results);
+      // console.log(results);
 
-      console.log(_res);
+      // console.log(_res);
       data.value = _res;
       console.log(data.value);
     };
@@ -385,14 +385,14 @@ export default defineComponent({
         });
         data.value = _res;
         message.success("查询成功");
-        console.log(_res);
+        // console.log(_res);
       });
     };
 
     const onDelete = async (id) => {
       message.loading("正在执行...", 1.5).then(async () => {
         const res = await deleteInfo(id);
-        console.log(res);
+        // console.log(res);
         if (res.status == 204) {
           router.go(0);
           message.success("删除成功！");
@@ -459,7 +459,7 @@ export default defineComponent({
 
         formData.append("basicInfoId", id);
         const result = await addFilesById(id, formData);
-        console.log(result);
+        // console.log(result);
         if (result.status == 204) {
           fileList.value = [];
 

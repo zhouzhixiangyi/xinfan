@@ -5,7 +5,7 @@ import App from './App';
 import { setupAntd } from './ant-design-vue'
 
 import router from './router'
-import '../mock/mock'
+// import '../mock/mock'
 import store from './store'
 
 

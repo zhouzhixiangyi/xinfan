@@ -167,6 +167,7 @@ export default defineComponent({
       appealWaysToDisplay: "",
       leader: "",
       remark: "",
+      relatedMaterials: null
     });
 
     // 验证规则
@@ -203,7 +204,7 @@ export default defineComponent({
     const getInfoById = async (id) => {
       let res = await getInfosById(id);
       res = res.data;
-      console.log(res);
+      // console.log(res);
       // 根据上诉方式的字符串确定它的值
       const val = ["来信", "来访", "上级转办", "政府热线", "其他"].findIndex(
         (i) => i == res.appealWaysToDisplay
@@ -216,7 +217,7 @@ export default defineComponent({
 
     if (route.params && route.params.id) {
       const id = route.params.id;
-      console.log(id);
+      // console.log(id);
       // 有id的话就是修改，获取它的信息
       getInfoById(id);
       document.title = "修改信息";
@@ -242,11 +243,10 @@ export default defineComponent({
 
         formState.value.appealWays = formState.value.appealWaysToDisplay;
 
-        console.log("------------000");
+        // console.log("------------000");
         console.log(formState.value);
         const res = await addInfo(formState.value);
-        console.log(res);
-
+        // console.log(res);
         const id = res.data;
 
         // 添加文件
@@ -254,7 +254,7 @@ export default defineComponent({
         fileList.value.forEach((file) => {
           formData.append("formData", file);
         });
-        console.log(formData);
+        // conssole.log(formData);
         uploading.value = true; // You can use any AJAX library you like
 
         formData.append("basicInfoId", id);
@@ -269,8 +269,7 @@ export default defineComponent({
           uploading.value = false;
           message.error("保存失败");
         }
-
-        console.log(result);
+        // console.log(result);
 
         // console.log(result);
 
@@ -342,10 +341,10 @@ export default defineComponent({
           path: `/appealWays`,
           value: `${info["appealWaysToDisplay"]}`,
         });
-        console.log(jsonInfo);
+        // console.log(jsonInfo);
 
         const res = await editInfo(formState.value.id, jsonInfo);
-        console.log(res);
+        // console.log(res);
         if (res.status == 204) {
           message.success("修改成功！");
           router.push("/list");
