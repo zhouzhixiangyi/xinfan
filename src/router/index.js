@@ -1,8 +1,8 @@
-import { createRouter, createWebHistory  } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 
 const routerHistory = createWebHistory() // 引入路由方式
 
-const router =  createRouter({
+const router = createRouter({
     history: routerHistory,
     routes: [
         {
@@ -32,7 +32,31 @@ const router =  createRouter({
                     meta: {
                         title: '添加数据',
                     }
+                },
+                {
+                    path: 'see/:id',
+                    component: () => import('../views/see'),
+                    meta: {
+                        title: '查看数据',
+                    }
                 }
+                ,
+                {
+                    path: 'monthReport',
+                    component: () => import('../views/monthReport'),
+                    meta: {
+                        title: '月报',
+                    }
+                }
+                ,
+                {
+                    path: 'otherReport',
+                    component: () => import('../views/otherReport'),
+                    meta: {
+                        title: '季报或年报',
+                    }
+                }
+
             ]
         },
         {

@@ -9,10 +9,9 @@
           <span class="login100-form-title-1">登 录</span>
         </div>
 
-        <div class="login100-form validate-form">
+        <div class="login100-form ">
           <div
-            class="wrap-input100 validate-input m-b-26"
-            data-validate="手机号不能为空"
+            class="wrap-input100  m-b-26"
           >
             <span class="label-input100">手机号</span>
             <input
@@ -26,8 +25,7 @@
           </div>
 
           <div
-            class="wrap-input100 validate-input m-b-18"
-            data-validate="密码不能为空"
+            class="wrap-input100 m-b-18"
           >
             <span class="label-input100">密码</span>
             <input
@@ -53,6 +51,7 @@ import { defineComponent, reactive } from "vue";
 import { message } from "ant-design-vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
+import md5 from 'js-md5';
 export default defineComponent({
   setup() {
     document.title = "登录";
@@ -65,10 +64,13 @@ export default defineComponent({
 
     const toLogin = async () => {
       message.loading("正在执行...", 1.5).then(async () => {
-        const { mobile, password } = formState;
+        
+        console.log(formState);
+        let { mobile, password } = formState;
+        password = md5(password);
         if (mobile.trim() == "" || password.trim() == "")
           return message.warning("用户名和密码不能为空");
-        const res = await store.dispatch("LoginResult", formState);
+        const res = await store.dispatch("LoginResult", {mobile,password});
         // console.log(res);
         if (res.status == 200) {
           // console.log(store.state.token);

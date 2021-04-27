@@ -24,7 +24,8 @@ export function getInfos() {
 
 // 条件查询
 export function getInfoByConditions(conditions) {
-    const { name, company, startTime, endTime } = conditions
+    const { name, company, startTime, endTime, isEnd,isRepeated } = conditions
+    console.log(conditions);
     return request({
         url: '/api/xinfangBasicInformations',
         method: 'GET',
@@ -32,7 +33,30 @@ export function getInfoByConditions(conditions) {
             name,
             company,
             startTime,
-            endTime
+            endTime,
+            isEnd,
+            isRepeated
+        }
+    })
+}
+
+// 月查询
+export function getInfoByMonth(yearMonth) {
+    let year = ''
+    let month = ''
+    
+    if (yearMonth) {
+        let data = yearMonth.split('-')
+        year = data[0]
+        month = data[1]
+    }
+    console.log(year,month)
+    return request({
+        url: '/api/xinfangBasicInformations/details/GetByMonth',
+        method: 'GET',
+        params: {
+            year,
+            month
         }
     })
 }

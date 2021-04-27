@@ -5,8 +5,8 @@
       :label-col="labelCol"
       :wrapper-col="wrapperCol"
       ref="formRef"
-      :rules="rules"
       enctype="multipart/form-data"
+      :rules="rules"
     >
       <a-form-item label="收到时间" name="receivedTime">
         <a-date-picker
@@ -21,28 +21,55 @@
           placeholder="请输入来信来访人"
         />
       </a-form-item>
+      <a-form-item label="来访人人数" name="personCount">
+        <a-input
+          v-model:value="formState.personCount"
+          placeholder="请输入来访人人数"
+        />
+      </a-form-item>
+      <a-form-item label="是否重复访" name="isRepeated">
+        <a-select
+          v-model:value="formState.isRepeated"
+          placeholder="请输入是否重复访"
+          
+        >
+          <a-select-option :value="true">是</a-select-option>
+          <a-select-option :value="false">否</a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item label="单位" name="company">
-        <a-input v-model:value="formState.company" placeholder="请输入单位" />
+        <a-input
+          v-model:value="formState.company"
+          placeholder="请输入单位"
+         
+        />
       </a-form-item>
       <a-form-item label="身份证号" name="identityNumber">
         <a-input
           v-model:value="formState.identityNumber"
           placeholder="请输入身份证号"
+        
         />
       </a-form-item>
       <a-form-item label="联系方式" name="tel">
-        <a-input v-model:value="formState.tel" placeholder="请输入联系方式" />
+        <a-input
+          v-model:value="formState.tel"
+          placeholder="请输入联系方式"
+         
+        />
       </a-form-item>
       <a-form-item label="家庭住址" name="address">
         <a-input
           v-model:value="formState.address"
           placeholder="请输入家庭住址"
+         
         />
       </a-form-item>
       <a-form-item label="社会关系" name="socialRelationship">
         <a-input
           v-model:value="formState.socialRelationship"
           placeholder="请输入社会关系"
+          
         />
       </a-form-item>
       <a-form-item label="主要诉求" name="mainAppeal">
@@ -56,6 +83,7 @@
         <a-input
           v-model:value="formState.receptionist"
           placeholder="请输入接访人"
+        
         />
       </a-form-item>
       <a-form-item label="处理时间" name="handledTime">
@@ -67,13 +95,23 @@
       </a-form-item>
 
       <a-form-item label="处理意见" name="opinions">
-        <a-input
+        <!-- <a-input
           v-model:value="formState.opinions"
           placeholder="请输入处理意见"
+          
+        /> -->
+        <a-textarea
+          v-model:value="formState.opinions"
+          placeholder="请输入处理意见"
+          :rows="5"
         />
       </a-form-item>
       <a-form-item label="是否终结" name="isEnd">
-        <a-select v-model:value="formState.isEnd" placeholder="请输入是否终结">
+        <a-select
+          v-model:value="formState.isEnd"
+          placeholder="请输入是否终结"
+          
+        >
           <a-select-option :value="true">已终结</a-select-option>
           <a-select-option :value="false">未终结</a-select-option>
         </a-select>
@@ -81,7 +119,8 @@
       <a-form-item label="反映渠道" name="appealWaysToDisplay">
         <a-select
           v-model:value="formState.appealWaysToDisplay"
-          placeholder="请输入反应渠道"
+          placeholder="请输入反映渠道"
+         
         >
           <a-select-option :value="1">来信</a-select-option>
           <a-select-option :value="2">来访</a-select-option>
@@ -94,10 +133,15 @@
         <a-input
           v-model:value="formState.leader"
           placeholder="请输入包案领导"
+  
         />
       </a-form-item>
       <a-form-item label="备注" name="remark">
-        <a-input v-model:value="formState.remark" placeholder="请输入备注" />
+        <a-input
+          v-model:value="formState.remark"
+          placeholder="请输入备注"
+ 
+        />
       </a-form-item>
       <a-form-item v-show="!(route.params && route.params.id)" label="附件材料">
         <a-upload
@@ -121,22 +165,28 @@
           </a-button> -->
         </a-upload>
       </a-form-item>
+      <!-- v-show="route.params && route.params.id && isLeader" -->
+      <a-form-item
+        :wrapper-col="{ span: 14, offset: 4 }"
+        
+      >
+        <a-button type="primary" @click="onSubmit" :loading="uploading">{{
+          uploading ? "正在上传" : "保存并上传数据"
+        }}</a-button>
+        <a-button style="margin-left: 10px" @click="resetForm">重置</a-button>
+      </a-form-item>
     </a-form>
-    <div class="submit-button">
-      <a-button type="primary" @click="onSubmit" :loading="uploading">{{
-        uploading ? "正在上传" : "保存并上传数据"
-      }}</a-button>
-      <a-button style="margin-left: 10px" @click="resetForm">重置</a-button>
-    </div>
   </div>
 </template>
 <script>
 import { UploadOutlined } from "@ant-design/icons-vue";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getInfosById, addInfo, editInfo, addFilesById } from "@/api/info";
 import Moment from "moment";
 import { message } from "ant-design-vue";
+import leaders from "@/constant/leader.js";
+import { useStore } from "vuex";
 
 export default defineComponent({
   components: {
@@ -154,6 +204,8 @@ export default defineComponent({
     let formState = ref({
       receivedTime: "",
       name: "",
+      personCount: 0,
+      isRepeated: false,
       company: "",
       identityNumber: "",
       tel: "",
@@ -167,38 +219,45 @@ export default defineComponent({
       appealWaysToDisplay: "",
       leader: "",
       remark: "",
-      relatedMaterials: null
+      relatedMaterials: null,
     });
 
     // 验证规则
     const rules = {
-      receivedTime: [{ required: true, message: "收到时间不能为空" }],
-      name: [
-        { required: true, trigger: "blur", message: "来信来访人不能为空" },
-      ],
-      // company: [{ required: true, trigger: "blur" }],
-      identityNumber: [
-        { required: true, trigger: "blur", message: "身份证号不能为空" },
-        { len: 18, message: "身份证号只能是18位", trigger: "blur" },
-      ],
-      tel: [
-        { required: true, trigger: "blur", message: "联系方式不能为空" },
-        { max: 11, message: "联系方式不能超过11位", trigger: "blur" },
-      ],
-      // address: [{ required: true, trigger: "blur" }],
-      // socialRelationship: [{ required: true, trigger: "blur" }],
-      mainAppeal: [
-        { required: true, trigger: "blur", message: "主要诉求不能为空" },
-      ],
-      // receptionist: [{ required: true, trigger: "blur" }],
-      handledTime: [{ required: true, message: "处理时间不能为空" }],
-      opinions: [{ required: true, trigger: "blur", message: "建议不能为空" }],
+      // receivedTime: [{ required: true, message: "收到时间不能为空" }],
+      // name: [
+      //   { required: true, trigger: "blur", message: "来信来访人不能为空" },
+      // ],
+      // // company: [{ required: true, trigger: "blur" }],
+      // identityNumber: [
+      //   { required: true, trigger: "blur", message: "身份证号不能为空" },
+      //   { len: 18, message: "身份证号只能是18位", trigger: "blur" },
+      // ],
+      // tel: [
+      //   { required: true, trigger: "blur", message: "联系方式不能为空" },
+      //   { max: 11, message: "联系方式不能超过11位", trigger: "blur" },
+      // ],
+      // // address: [{ required: true, trigger: "blur" }],
+      // // socialRelationship: [{ required: true, trigger: "blur" }],
+      // mainAppeal: [
+      //   { required: true, trigger: "blur", message: "主要诉求不能为空" },
+      // ],
+      // // receptionist: [{ required: true, trigger: "blur" }],
+      // handledTime: [{ required: true, message: "处理时间不能为空" }],
+      // opinions: [{ required: true, trigger: "blur", message: "建议不能为空" }],
       isEnd: [{ required: true, message: "是否结束不能为空" }],
       appealWaysToDisplay: [{ required: true, message: "来访方式不能为空" }],
       // leader: [{ required: true, trigger: "blur" }],
       // remark: [{ required: true, trigger: "blur" }],
     };
     document.title = "添加数据";
+
+    const store = useStore();
+    const username = computed(() => {
+      return store.getters.loginUser;
+    });
+
+    const isLeader = leaders.includes(username.value);
 
     //发送请求获取信息
     const getInfoById = async (id) => {
@@ -243,7 +302,7 @@ export default defineComponent({
 
         formState.value.appealWays = formState.value.appealWaysToDisplay;
 
-        // console.log("------------000");
+        console.log("------------000");
         console.log(formState.value);
         const res = await addInfo(formState.value);
         // console.log(res);
@@ -355,14 +414,24 @@ export default defineComponent({
     };
 
     const onSubmit = () => {
-      const rTime = Moment(formState.value.receivedTime).format(
-        "YYYY-MM-DD HH:mm:ss"
-      );
-      formState.value.receivedTime = rTime;
-      const hTime = Moment(formState.value.handledTime).format(
-        "YYYY-MM-DD HH:mm:ss"
-      );
-      formState.value.handledTime = hTime;
+      if (
+        formState.value.receivedTime != null &&
+        formState.value.receivedTime != ""
+      ) {
+        const rTime = Moment(formState.value.receivedTime).format(
+          "YYYY-MM-DD HH:mm:ss"
+        );
+        formState.value.receivedTime = rTime;
+      }
+      if (
+        formState.value.handledTime != null &&
+        formState.value.handledTime != ""
+      ) {
+        const hTime = Moment(formState.value.handledTime).format(
+          "YYYY-MM-DD HH:mm:ss"
+        );
+        formState.value.handledTime = hTime;
+      }
       formRef.value
         .validate()
         .then(() => {
@@ -423,6 +492,7 @@ export default defineComponent({
       handleRemove,
       beforeUpload,
       // handleUpload,
+      isLeader,
     };
   },
 });
@@ -430,18 +500,10 @@ export default defineComponent({
 <style lang='less'>
 .form-area {
   margin-top: 20px;
-  height: 500px;
+  height: calc(100vh - 220px);
   overflow-y: auto;
   .small-item {
     width: 450px;
-  }
-  .submit-button {
-    position: fixed;
-    margin: auto;
-    left: 700px;
-    right: 0;
-    //top: 0;
-    bottom: 42px;
   }
 }
 </style>

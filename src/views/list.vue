@@ -2,25 +2,55 @@
   <div class="data-table">
     <a-form layout="inline" :model="formState">
       <a-form-item>
-        <a-input v-model:value="searchForm.name" placeholder="来信来访人">
+        <a-input
+          v-model:value="searchForm.name"
+          placeholder="来信来访人"
+          :allowClear="true"
+        >
         </a-input>
       </a-form-item>
       <a-form-item>
-        <a-input v-model:value="searchForm.company" placeholder="单位">
+        <a-input
+          v-model:value="searchForm.company"
+          placeholder="单位"
+          :allowClear="true"
+        >
         </a-input>
       </a-form-item>
       <a-form-item>
         <a-date-picker
           v-model:value="searchForm.startTime"
           show-time
-          placeholder="接收时间-起始"
+          placeholder="收到时间-起始"
         />
         -
         <a-date-picker
           v-model:value="searchForm.endTime"
           show-time
-          placeholder="接收时间-结束"
+          placeholder="收到时间-结束"
         />
+      </a-form-item>
+      <a-form-item>
+        <a-select
+          v-model:value="searchForm.isEnd"
+          placeholder="是否终结"
+          :allowClear="true"
+        >
+          <!-- <a-select-option ></a-select-option> -->
+          <a-select-option :value="true">已终结</a-select-option>
+          <a-select-option :value="false">未终结</a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item>
+        <a-select
+          v-model:value="searchForm.isRepeated"
+          placeholder="是否重复上访"
+          :allowClear="true"
+        >
+          <!-- <a-select-option ></a-select-option> -->
+          <a-select-option :value="true"> 重复上访 </a-select-option>
+          <a-select-option :value="false"> 非重复上访</a-select-option>
+        </a-select>
       </a-form-item>
       <a-form-item>
         <a-button type="primary" @click="searchInfo"> 查询 </a-button>
@@ -30,11 +60,16 @@
     <a-table
       :columns="columns"
       :data-source="data"
-      :scroll="{ x: 1500, y: 420 }"
+      :scroll="{ x: 1500, y: 'calc(100vh - 400px)' }"
+      :customRow="rowClick"
     >
       <template #action="{ record }">
-        <!-- <a :href="'/edit/'+record.id">修改</a> -->
-        <router-link :to="'/edit/' + record.id" tag="a">修改</router-link>
+        <a
+          :href="'/edit/' + record.id"
+          :class="{ dis: record.isEnd.toString() == '已终结' }"
+          >修改</a
+        >
+        <!-- <router-link :to="'/edit/' + record.id" tag="a" :disabled="record.isEnd==='已终结'">修改{{record.isEnd}}</router-link> -->
         <a-divider type="vertical" />
         <a-popconfirm
           v-if="data.length"
@@ -81,6 +116,7 @@
                       >{{ item.fileName }}</a
                     >
                     <a
+                      v-if="isLeader"
                       @click="
                         deletefile(item.xinfangBasicInformationId, item.id)
                       "
@@ -91,11 +127,12 @@
               </a-list>
             </a-col>
             <a-col :span="1"></a-col>
-            <a-col :span="7">
+            <a-col :span="7" v-if="isLeader">
               <a-upload
                 :file-list="fileList"
                 :remove="handleRemove"
                 :before-upload="beforeUpload"
+                :multiple="true"
               >
                 <a-button>
                   <upload-outlined></upload-outlined>
@@ -119,8 +156,10 @@
   </div>
 </template>
 <script>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import { DeleteOutlined } from "@ant-design/icons-vue";
+import leaders from "@/constant/leader.js";
+import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import {
   getInfos,
@@ -133,7 +172,7 @@ import {
 // import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import Moment from "moment";
-const columns = [
+let columns = [
   {
     title: "序号",
     width: 80,
@@ -166,6 +205,20 @@ const columns = [
     align: "center",
   },
   {
+    title: "人数",
+    width: 80,
+    dataIndex: "personCount",
+    key: "personCount",
+    align: "center",
+  },
+  {
+    title: "是否重复访",
+    width: 80,
+    dataIndex: "isRepeated",
+    key: "isRepeated",
+    align: "center",
+  },
+  {
     title: "单位",
     dataIndex: "company",
     key: "company",
@@ -173,63 +226,23 @@ const columns = [
     align: "center",
   },
   {
-    title: "身份证号",
-    dataIndex: "identityNumber",
-    key: "identityNumber",
-    width: 180,
-    sorter: (a, b) => {
-      return parseInt(a.identityNumber) - parseInt(b.identityNumber);
-    },
-    //sortOrder: 'ascend',
-    sortDirections: ["ascend", "descend"],
-    align: "center",
-  },
-  {
-    title: "联系方式",
-    dataIndex: "tel",
-    key: "tel",
-    width: 140,
-    align: "center",
-  },
-  {
-    title: "家庭住址",
-    dataIndex: "address",
-    key: "address",
-    width: 180,
-    align: "center",
-  },
-  {
-    title: "社会关系",
-    dataIndex: "socialRelationship",
-    key: "socialRelationship",
-    width: 120,
-    align: "center",
-  },
-  {
     title: "主要诉求",
     dataIndex: "mainAppeal",
     key: "mainAppeal",
-    width: 150,
-    ellipsis: true,
-    align: "center",
-    customCell: () => {
-      return {
-          style:{
-            maxWidth:260,
-            overflow:'hidden',
-            whiteSpace:'nowrap',
-            textOverflow:'ellipsis',
-            cursor:'pointer',
-          }
-        }
-    }
-  },
-  {
-    title: "接访人",
-    dataIndex: "receptionist",
-    key: "receptionist",
-    width: 120,
-    align: "center",
+    width: 200,
+    // ellipsis: true,
+    // align: "center",
+    // customCell: () => {
+    //   return {
+    //     style: {
+    //       maxWidth: 260,
+    //       overflow: "hidden",
+    //       whiteSpace: "nowrap",
+    //       textOverflow: "ellipsis",
+    //       cursor: "pointer",
+    //     },
+    //   };
+    // },
   },
   {
     title: "处理时间",
@@ -254,9 +267,47 @@ const columns = [
     title: "处理意见",
     dataIndex: "opinions",
     key: "opinions",
+    width: 200,
+    align: "center",
+  },
+  {
+    title: "联系方式",
+    dataIndex: "tel",
+    key: "tel",
+    width: 140,
+    align: "center",
+  },
+  {
+    title: "身份证号",
+    dataIndex: "identityNumber",
+    key: "identityNumber",
+    width: 190,
+    align: "center",
+  },
+
+  {
+    title: "家庭住址",
+    dataIndex: "address",
+    key: "address",
+    width: 180,
+    align: "center",
+  },
+  {
+    title: "社会关系",
+    dataIndex: "socialRelationship",
+    key: "socialRelationship",
     width: 120,
     align: "center",
   },
+
+  {
+    title: "接访人",
+    dataIndex: "receptionist",
+    key: "receptionist",
+    width: 120,
+    align: "center",
+  },
+
   {
     title: "是否终结",
     dataIndex: "isEnd",
@@ -289,6 +340,7 @@ const columns = [
   {
     title: "操作",
     key: "operation",
+    dataIndex: "operation",
     //fixed: "right",
     width: 120,
     slots: {
@@ -305,6 +357,22 @@ export default defineComponent({
   setup() {
     document.title = "信息列表";
     const router = useRouter();
+    console.log(leaders);
+    const store = useStore();
+
+    const username = computed(() => {
+      return store.getters.loginUser;
+    });
+
+    const isLeader = leaders.includes(username.value);
+
+    console.log(isLeader);
+
+    if (!isLeader) {
+      console.log("c-------");
+      columns = columns.filter((item) => item.dataIndex !== "operation");
+      console.log(columns);
+    }
 
     // const router = useRouter();
     let data = ref([]);
@@ -313,6 +381,8 @@ export default defineComponent({
       company: null,
       startTime: null,
       endTime: null,
+      isEnd: null,
+      isRepeated: null,
     });
 
     const get = async () => {
@@ -334,17 +404,23 @@ export default defineComponent({
 
           const result = await getFilesById(item.id);
           item.relatedMaterials = result.data;
-          item.receivedTime = Moment(item.receivedTime).format(
-            "YYYY-MM-DD HH:mm:ss"
-          );
-          item.handledTime = Moment(item.handledTime).format(
-            "YYYY-MM-DD HH:mm:ss"
-          );
+          if (item.receivedTime != null && item.receivedTime != "") {
+            item.receivedTime = Moment(item.receivedTime).format(
+              "YYYY-MM-DD HH:mm:ss"
+            );
+          }
+          if (item.handledTime != null && item.handledTime != "") {
+            item.handledTime = Moment(item.handledTime).format(
+              "YYYY-MM-DD HH:mm:ss"
+            );
+          }
+          item.isEnd ? (item.isEnd = "已终结") : (item.isEnd = "未终结");
+          item.isRepeated ? (item.isRepeated = "重复上访") : (item.isRepeated = "非重复上访");
           _res.push(Object.assign({}, item, { key: index }));
           return _res;
         })
       );
-      // console.log(results);
+      console.log(results);
 
       // console.log(_res);
       data.value = _res;
@@ -379,8 +455,19 @@ export default defineComponent({
         let _res = [];
         res.map((item, index) => {
           item.isEnd ? (item.isEnd = "已终结") : (item.isEnd = "未终结");
-          item.receivedTime = item.receivedTime.replace("T", " ");
-          item.handledTime = item.handledTime.replace("T", " ");
+          item.isRepeated ? (item.isRepeated = "重复上访") : (item.isRepeated = "非重复上访");
+          if (item.receivedTime != null && item.receivedTime != "") {
+            item.receivedTime = Moment(item.receivedTime).format(
+              "YYYY-MM-DD HH:mm:ss"
+            );
+          }
+          if (item.handledTime != null && item.handledTime != "") {
+            item.handledTime = Moment(item.handledTime).format(
+              "YYYY-MM-DD HH:mm:ss"
+            );
+          }
+          // item.receivedTime = item.receivedTime.replace("T", " ");
+          // item.handledTime = item.handledTime.replace("T", " ");
           _res.push(Object.assign({}, item, { key: index, index: index }));
         });
         data.value = _res;
@@ -474,6 +561,15 @@ export default defineComponent({
       });
     };
 
+    const rowClick = (record) => {
+      return {
+        onClick: () => {
+          router.push("/see/" + record.id);
+          // console.log(record)
+        }, // 点击行
+      };
+    };
+
     return {
       data,
       columns,
@@ -486,6 +582,8 @@ export default defineComponent({
       handleUpload,
       handleRemove,
       beforeUpload,
+      isLeader,
+      rowClick,
     };
   },
 });
@@ -503,5 +601,10 @@ export default defineComponent({
       float: right;
     }
   }
+}
+.dis {
+  pointer-events: none;
+  cursor: default;
+  color: gray;
 }
 </style>

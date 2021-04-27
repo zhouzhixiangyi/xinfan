@@ -18,10 +18,25 @@
           <a-menu-item key="/list"
             ><router-link to="/list">数据列表</router-link></a-menu-item
           >
-          <a-menu-item key="/add"
+          <a-menu-item key="/add" v-if="isLeader"
             ><router-link to="/add">添加数据</router-link></a-menu-item
           >
         </a-sub-menu>
+        <a-sub-menu key="2">
+          <template #title>
+            <span>
+              <RadarChartOutlined />
+              <span>报表管理</span>
+            </span>
+          </template>
+          <a-menu-item key="/monthReport"
+            ><router-link to="/monthReport">月报</router-link></a-menu-item
+          >
+          <a-menu-item key="/otherReport"
+            ><router-link to="/otherReport">季报/年报</router-link></a-menu-item
+          >
+        </a-sub-menu>
+        
       </a-menu>
     </a-layout-sider>
     <a-layout>
@@ -77,8 +92,10 @@ import {
 // const IconFont = createFromIconfontCN({
 //   scriptUrl: "//at.alicdn.com/t/font_2482616_d5kl03f18ju.js",
 // });
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import { useRoute /*useRouter*/ } from "vue-router";
+import leaders from "@/constant/leader.js";
+import { useStore } from "vuex";
 export default defineComponent({
   components: {
     MenuUnfoldOutlined,
@@ -94,17 +111,24 @@ export default defineComponent({
     //   document.title = to.meta.title;
     // });
     const route = useRoute();
+    const store = useStore();
     // const router = useRouter();
 
     // // router -> this.$router
     // // route > this.$route
     // router.push("/");
     //const title = ref(route.meta.title)
+    const username = computed(() => {
+      return store.getters.loginUser;
+    });
+
+    const isLeader = leaders.includes(username.value);
 
     return {
       collapsed: ref(false),
       selectedKeys: ref(["1"]),
       route,
+      isLeader,
     };
   },
 });
@@ -135,7 +159,7 @@ export default defineComponent({
       cursor: pointer;
       transition: color 0.3s;
     }
-    .ant-row{
+    .ant-row {
       display: flex;
       justify-content: space-between;
       padding: 0 16px;

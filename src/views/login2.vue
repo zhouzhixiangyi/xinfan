@@ -7,6 +7,7 @@ import { defineComponent } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useStore } from "vuex";
 import { message } from "ant-design-vue";
+// import md5 from 'js-md5';
 
 export default defineComponent({
   setup() {
@@ -34,8 +35,8 @@ export default defineComponent({
       };
       if (route.query && route.query.mobile && route.query.password) {
         const mobile = route.query.mobile;
-        const password = route.query.password;
-
+        let password = route.query.password;
+        // password = md5(password);
         toLogin(mobile, password);
       } else {
         router.push("/login");
